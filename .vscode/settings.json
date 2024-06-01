@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "ranlib.h": "c",
+        "raylib.h": "c",
+        "stdio.h": "c",
+        "random": "c"
+    }
+}
