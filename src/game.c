@@ -11,7 +11,7 @@ Texture2D tex_background;
 Texture2D tex_game_field;
 
 void update() {
-    //enemy_update();
+    enemy_update();
     back_animation--;
     player_update();
 }
@@ -35,34 +35,38 @@ void draw() {
             WHITE
         );
         
-        //enemy_draw();
+        enemy_draw();
         player_draw();
     
     EndScissorMode();
 }
 
 void init() {
+    InitAudioDevice();
+    SetMasterVolume(0.1);
     player_init();
-    //enemy_init();
+    enemy_init();
 
     tex_background = LoadTexture("src/sprites/bg.png");
     tex_game_field = LoadTexture("src/sprites/bg2.png");
 }
 
-int game_loop() {
+void game_loop() {
     ///*
+
     init();
 
     while(!WindowShouldClose()) {
+        //PlaySound(LoadSound("src/sounds/bullet_sound.mp3"));
         update();
-        BeginDrawing();
+        BeginDrawing(); 
+        {
             ClearBackground(RAYWHITE);
             draw();
+        } 
         EndDrawing();
     }
-    CloseWindow(); 
-    //*/
 
-    printf("flkjdsalkfj");
-    return 0;
+    CloseAudioDevice();
+    //*/
 }

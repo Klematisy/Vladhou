@@ -30,6 +30,7 @@ int timer = 0;
 Texture2D tex_player;
 Texture2D tex_hud;
 Texture2D tex_bullet;
+Sound bullet_sound;
 
 void create_bullet(int delta) {
     Bullet* b = &player_bullet[player_bullet_count];
@@ -112,6 +113,7 @@ void player_update() {
     
     if (timer % 4 == 0) {
         if (IsKeyDown(KEY_Z)) {
+            PlaySound(bullet_sound);
             create_bullet(0);
             create_bullet(38);
         }
@@ -121,7 +123,7 @@ void player_update() {
     for (int i = 0; i < player_bullet_count; i++) {
         player_bullet[i].y += player_bullet[i].y_speed;
 
-        if (player_bullet[i].y < -20) {
+        if (player_bullet[i].y < 10) {
             delete_bullet(i);
             i--;
         }
@@ -198,5 +200,18 @@ void player_init() {
     tex_player = LoadTexture("src/sprites/REIMU_SPRITES.png");
     tex_hud = LoadTexture("src/sprites/reimu_shift.png");
     tex_bullet = LoadTexture("src/sprites/reimu_bullet.png");
+    bullet_sound = LoadSound("src/sounds/bullet_sound.wav");
     
+}
+
+float get_x_bullet(int j) {
+    return player_bullet[j].x;
+}
+
+float get_y_bullet(int j) {
+    return player_bullet[j].y;
+}
+
+int get_player_bullet_count() {
+    return player_bullet_count;
 }

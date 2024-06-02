@@ -13,6 +13,7 @@ int main() {
     
     init_window(); //initialise window 
     game_loop(); //main game loop in game.c
+    CloseWindow();
 
     return 0;
 }
