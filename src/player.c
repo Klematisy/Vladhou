@@ -31,6 +31,7 @@ Texture2D tex_player;
 Texture2D tex_hud;
 Texture2D tex_bullet;
 Sound bullet_sound;
+Sound player_death;
 
 void create_bullet(int delta) {
     Bullet* b = &player_bullet[player_bullet_count];
@@ -55,6 +56,12 @@ void player_update() {
     player.y_speed = 0;
 
     float spd = 7;
+
+    for (int i = 0; i < get_count_bullet(); i++) {
+        if ((player.x < get_enemy_bullet_x(i) + 15) && (get_enemy_bullet_x(i) < player.x + 30) && (player.y < get_enemy_bullet_y(i) + 13.5) && (get_enemy_bullet_y(i) < player.y + 32)) {
+            PlaySound(player_death);
+        }
+    }
 
     if (IsKeyDown(KEY_LEFT_SHIFT)) {
         spd = 3;
@@ -201,6 +208,7 @@ void player_init() {
     tex_hud = LoadTexture("src/sprites/reimu_shift.png");
     tex_bullet = LoadTexture("src/sprites/reimu_bullet.png");
     bullet_sound = LoadSound("src/sounds/bullet_sound.wav");
+    player_death = LoadSound("src/sounds/player_death.wav");
     
 }
 
@@ -214,4 +222,12 @@ float get_y_bullet(int j) {
 
 int get_player_bullet_count() {
     return player_bullet_count;
+}
+
+float get_player_x() {
+    return player.x;
+}
+
+float get_player_y() {
+    return player.y;
 }

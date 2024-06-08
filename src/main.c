@@ -17,3 +17,6 @@ int main() {
 
     return 0;
 }
+
+#define MINICORO_IMPL
+#include "minicoro.h"
