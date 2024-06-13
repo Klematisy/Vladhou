@@ -8,3 +8,5 @@ void delete_enemy();
 float get_enemy_bullet_x(int j);
 float get_enemy_bullet_y(int j);
 int get_count_bullet();
+float get_enemy_bullet_width(int j);
+float get_enemy_bullet_height(int j);

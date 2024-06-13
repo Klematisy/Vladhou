@@ -12,6 +12,13 @@ typedef struct Player {
     float frame_index;
 } Player;
 
+typedef struct Collision {
+    float x;
+    float y;
+    float height;
+    float width;
+} Collision;
+
 typedef struct Bullet {
     float x;
     float y;
@@ -21,10 +28,14 @@ typedef struct Bullet {
 
 Player player;
 Bullet player_bullet[1000];
+Collision player_col;
+Collision bullet_col[100];
+
 int player_bullet_count = 0;
 int rotation_k_right = 0;
 int rotation_k_left = 0;
 int animation_start = 0;
+int points = 0;
 int timer = 0;
 
 Texture2D tex_player;
@@ -41,14 +52,20 @@ void create_bullet(int delta) {
     b->x_speed = 20;
     b->y_speed = -20;
 
+    bullet_col[delta].height = 16;
+    bullet_col[delta].width = 14;
+
     player_bullet_count++;
 }
 
-void delete_bullet(int i) {
+void delete_bullet(int i, char enemy_type[]) {
     for (int j = i; j < player_bullet_count - 1; j++) {
         player_bullet[j] = player_bullet[j + 1];
     }
     player_bullet_count--;
+    if (enemy_type == "pixi") {
+        points+=200;
+    }
 }
 
 void player_update() {
@@ -56,9 +73,14 @@ void player_update() {
     player.y_speed = 0;
 
     float spd = 7;
-
+    points = 0;
+ 
     for (int i = 0; i < get_count_bullet(); i++) {
-        if ((player.x < get_enemy_bullet_x(i) + 15) && (get_enemy_bullet_x(i) < player.x + 30) && (player.y < get_enemy_bullet_y(i) + 13.5) && (get_enemy_bullet_y(i) < player.y + 32)) {
+        if ((player_col.x + 20 - 7.5 <= get_enemy_bullet_x(i) + 10) &&
+            (get_enemy_bullet_x(i) + 10 <= player_col.x + 20 - 7.5 + 10) &&
+            (player_col.y + 27 - 7.5 < get_enemy_bullet_y(i) + 10) &&
+            (get_enemy_bullet_y(i) + 10 < player_col.y + 27 - 7.5 + 10))
+        {
             PlaySound(player_death);
         }
     }
@@ -76,6 +98,9 @@ void player_update() {
             player.x_speed = spd;
         }
 
+        player_col.x = player.x;
+        player_col.y = player.y;
+
         player.frame_index += 0.25;
         if (player.frame_index > 7) {
             player.frame_index = animation_start;
@@ -87,6 +112,9 @@ void player_update() {
         if (player.x > 52) {
             player.x_speed = -spd;
         }
+
+        player_col.x = player.x;
+        player_col.y = player.y;
 
         player.frame_index += 0.25;
         if (player.frame_index > 7) {
@@ -131,9 +159,11 @@ void player_update() {
         player_bullet[i].y += player_bullet[i].y_speed;
 
         if (player_bullet[i].y < 10) {
-            delete_bullet(i);
+            delete_bullet(i, "");
             i--;
         }
+        bullet_col[i].y = player_bullet[i].y;
+        bullet_col[i].x = player_bullet[i].x;
     }
 }
 
@@ -195,6 +225,7 @@ void player_draw() {
             DrawTexturePro(tex_hud, src_hud, dest_hud, (Vector2) {48, 45.75}, rotation_k_right, WHITE);
             DrawTexturePro(tex_hud, src_hud, dest_hud, (Vector2) {48, 45.75}, rotation_k_left, WHITE);
         }
+      //DrawRectangle(player.x + 20 - 7.5, player.y + 27 - 7.5, 10, 10, WHITE);
     }
 }
 
@@ -204,6 +235,10 @@ void player_init() {
     player.x = 350;
     player.y = 662;
     player.frame_index = 0.25;
+
+    player_col.height = 94;
+    player_col.width = 60;
+
     tex_player = LoadTexture("src/sprites/REIMU_SPRITES.png");
     tex_hud = LoadTexture("src/sprites/reimu_shift.png");
     tex_bullet = LoadTexture("src/sprites/reimu_bullet.png");
@@ -230,4 +265,8 @@ float get_player_x() {
 
 float get_player_y() {
     return player.y;
+}
+
+int get_points() {
+    return points;
 }
