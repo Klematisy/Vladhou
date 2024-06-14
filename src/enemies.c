@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "enemies.h"
 #include "player.h"
-#include "minicoro.h"
 #include <raylib.h>
 #include <math.h>
 
@@ -26,6 +25,8 @@ typedef struct Bullet {
     float height;
 } Bullet;
 
+
+
 //-------------CONSTANTS-----------------//
 
 const float pi = 3.14159265359;
@@ -35,8 +36,10 @@ const int centre_x = 350;
 
 Objects pixi[25];
 Bullet pixi_bullet[100];
+Item item_power[100];
 
 Texture2D tex_pixi;
+Texture2D tex_item_power;
 Texture2D tex_pixi_bullet;
 Sound pixi_death;
 
@@ -48,6 +51,8 @@ int shooting_enemy = 0;
 int created_bullets = 0;
 int bullets_count = 0;
 
+int pow_count = 0;
+
 //----------------------Костыли-----------------------//
 
 
@@ -55,6 +60,25 @@ int bullets_count = 0;
 //----------------------------------------------------//
 
 /*-------------------MAIN FUNCTIONS-------------------*/
+
+void delete_item_power(int i) {
+    for (int j = i; j < pow_count - 1; j++) {
+        item_power[j] = item_power[j + 1];
+    }
+    pow_count--;
+}
+
+void create_pow_item(int j) {
+    item_power[pow_count].x = pixi[j].x;
+    item_power[pow_count].y = pixi[j].y;
+    
+    item_power[pow_count].y_speed = -5;
+
+    item_power[pow_count].width = 24;
+    item_power[pow_count].height = 24;
+
+    pow_count++;
+}
 
 void create_enemy_bullet(int i, int delta_x, int delta_y, int d_x, int d_y) {
     Bullet* b = &pixi_bullet[i];
@@ -95,6 +119,7 @@ void create_enemy() {
 }
 
 void delete_enemy(int j) {
+    create_pow_item(j);
     for (int i = j; i < enemies_count - 1; i++) {
         pixi[i] = pixi[i + 1];
     }
@@ -160,23 +185,37 @@ void enemy_update() {
             delete_enemy_bullet(i);
         }
     }
+
+    for (int i = 0; i < pow_count; i++) {
+        item_power[i].y += item_power[i].y_speed;
+        if (item_power[i].y_speed < 3.5) {
+            item_power[i].y_speed += 0.1;
+        }
+        if (item_power[i].y > 768) {
+            delete_item_power(i);
+        }
+    }
 }
 
 void enemy_draw() {
-      for (int i = 0; i < bullets_count; i++) {
-        //DrawTexture(tex_pixi_bullet, pixi_bullet[i].x, pixi_bullet[i].y, WHITE);
+    for (int i = 0; i < bullets_count; i++) {
         DrawTexturePro(tex_pixi_bullet, (Rectangle) {0, 0, 16, 16}, (Rectangle) {pixi_bullet[i].x, pixi_bullet[i].y, pixi_bullet[i].width, pixi_bullet[i].height}, (Vector2) {8, 8}, 0, WHITE);
-      }
+    }
 
-      for (int i = 0; i < enemies_count; i++) {
+    for (int i = 0; i < enemies_count; i++) {
         DrawTexturePro(tex_pixi, (Rectangle) {0, 0, 30, 27}, (Rectangle) {pixi[i].x, pixi[i].y, pixi[i].height, pixi[i].width}, (Vector2) {22.5, 20.25}, 0, WHITE);
-      }
+    }
 
+    for (int i = 0; i < pow_count; i++) {
+        DrawTexturePro(tex_item_power, (Rectangle) {0, 0, 12, 12}, (Rectangle) {item_power[i].x, item_power[i].y, item_power[i].width, item_power[i].height}, (Vector2) {12, 12}, 0, WHITE);
+    }
 }
 
 void enemy_init() {
     tex_pixi = LoadTexture("src/sprites/Enemy.png");
     tex_pixi_bullet = LoadTexture("src/sprites/enemy_bullet.png");
+    tex_item_power = LoadTexture("src/sprites/item_power.png");
+
     pixi_death = LoadSound("src/sounds/pixi_death.wav");
 }
 
@@ -202,6 +241,10 @@ float get_enemy_bullet_height(int j) {
 
 int get_count_bullet() {
     return bullets_count;
+}
+
+int get_count_pows() {
+    return pow_count;
 }
 
 /*----------------------------------------------------*/

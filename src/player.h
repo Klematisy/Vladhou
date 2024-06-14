@@ -8,3 +8,5 @@ float get_player_x();
 float get_player_y();
 int get_player_bullet_count();
 int get_points();
+int get_hit_points();
+double get_power();

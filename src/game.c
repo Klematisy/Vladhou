@@ -6,19 +6,21 @@
 #include "game.h"
 #include "enemies.h"
 #include "player.h"
-#include "minicoro.h"
 
 int back_animation = 0;
 
-Texture2D tex_background;
+Texture2D tex_background_rigth;
+Texture2D tex_background_updown;
+Texture2D tex_background_left;
 Texture2D tex_game_field;
 Texture2D tex_diff;
 Texture2D tex_hi_score;
 Texture2D tex_score;
-Texture2D tex_hit_points;
+Texture2D tex_hit_points_text;
 Texture2D tex_power;
 Texture2D tex_graze;
 Texture2D tex_num;
+Texture2D tex_hit_points;
 
 int score = 0;
 // mco_coro* co;
@@ -55,13 +57,37 @@ void update() {
 }
 
 void draw() {
-    DrawTexturePro(tex_background,                              //Drawing Background
-        (Rectangle){0, 0, 640, 480}, 
-        (Rectangle){0, 0, GetScreenWidth() * 1.5, GetScreenHeight() * 1.5},      
-        (Vector2) {320, 240}, 
+    DrawTexturePro(tex_background_updown,                              //Drawing Background
+        (Rectangle){0, 0, 384, 32}, 
+        (Rectangle){380, 40, 647, 60},      
+        (Vector2) {383, 41.5}, 
         0,
         WHITE
-    ); 
+    );
+
+    DrawTexturePro(tex_background_updown,                              //Drawing Background
+        (Rectangle){0, 0, 384, 32}, 
+        (Rectangle){72, 710, 766.315789, 83.8596},      
+        (Vector2) {192, 16}, 
+        0,
+        WHITE
+    );
+
+    DrawTexturePro(tex_background_rigth,                              //Drawing Background
+        (Rectangle){0, 0, 228, 480}, 
+        (Rectangle){870, 120, 455, 770},                         
+        (Vector2) {227.5, 120}, 
+        0,
+        WHITE
+    );
+
+    DrawTexturePro(tex_background_left,                              //Drawing Background
+        (Rectangle){0, 0, 36, 480}, 
+        (Rectangle){18, 384, 68.8421053, 788},      
+        (Vector2) {34, 385}, 
+        0,
+        WHITE
+    );   
 
     BeginScissorMode(50, 39, 600, 690);
 
@@ -84,7 +110,7 @@ void draw() {
     
     DrawTexturePro(tex_score, (Rectangle) {0, 0, 56, 16}, (Rectangle) {768, 145, 98.378378, 28.444444}, (Vector2) {65, 16}, 0, WHITE);
 
-    DrawTexturePro(tex_hit_points, (Rectangle) {0, 0, 63, 20}, (Rectangle) {761, 200, 110.675676, 35.5555}, (Vector2) {65, 16}, 0, WHITE);
+    DrawTexturePro(tex_hit_points_text, (Rectangle) {0, 0, 63, 20}, (Rectangle) {761, 200, 110.675676, 35.5555}, (Vector2) {65, 16}, 0, WHITE);
 
     DrawTexturePro(tex_power, (Rectangle) {0, 0, 61, 18}, (Rectangle) {761, 240, 107.162162, 32}, (Vector2) {65, 16}, 0, WHITE);
 
@@ -94,40 +120,57 @@ void draw() {
     char table_score[16];
     snprintf(table_score, sizeof(table_score), "%09d", score);
 
-    printf("%s\n", table_score);
-
     int x;
     int d = 0;
     for (int i = 0; i < strlen(table_score); i++) {
-        x = 16;
-        switch (table_score[i]) {
-            case '0': x*=0;
-                break;
-            case '1': x*=1;
-                break;
-            case '2': x*=2;
-                break;
-            case '3': x*=3;
-                break;
-            case '4': x*=4;
-                break;
-            case '5': x*=5;
-                break;
-            case '6': x*=6;
-                break;
-            case '7': x*=7;
-                break;
-            case '8': x*=8;
-                break;
-            case '9': x*=9;
-                break;
-        }
-        DrawTexturePro(tex_num, (Rectangle) {x, 0, 16, 16}, (Rectangle) {828 + d, 111, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
-        DrawTexturePro(tex_num, (Rectangle) {x, 0, 16, 16}, (Rectangle) {828 + d, 144, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
+        x = (table_score[i] - '0') * 16;
+        DrawTexturePro(tex_num, (Rectangle) {x, 0, 16, 16}, (Rectangle) {840 + d, 111, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
+        DrawTexturePro(tex_num, (Rectangle) {x, 0, 16, 16}, (Rectangle) {840 + d, 144, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
         d+=24;
     }
+    d = 0;
+    for (int i = 0; i < get_hit_points(); i++) {
+        DrawTexturePro(tex_hit_points, (Rectangle) {0, 0, 16, 15}, (Rectangle) {840 + d, 200, 32, 32}, (Vector2) {16, 16}, 0, WHITE);
+        d = 28;
+    }
+    
+    char table_power[16];
+    sprintf(table_power, "%0.2lf", get_power());
 
-    //DrawText("NORMAL", 720, 50, 40, WHITE);
+    d = 0;
+    
+    bool after_dot = false;
+    for (int i = 0; i < 4; i++) {
+        if (table_power[i] == '.') {
+            x = 11 * 16;
+            after_dot = true;
+        } else {
+            x = (table_power[i] - '0') * 16;
+        }
+        
+        if (after_dot == false) {
+            DrawTexturePro(tex_num, (Rectangle) {x, 0, 16, 16}, (Rectangle) {840 + d, 240, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
+        } else {
+            DrawTexturePro(tex_num, (Rectangle) {x, 0, 16, 16}, (Rectangle) {840 + d / 2,  246, 16, 16}, (Vector2) {8, 8}, 0, WHITE);
+
+        }
+        d += 28;
+    }
+    
+    d = 28;
+    DrawTexturePro(tex_num, (Rectangle) {160, 0, 16, 16}, (Rectangle) {850 + d * 2, 240, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
+    
+    DrawTexturePro(tex_num, (Rectangle) {16 * 4, 0, 16, 16}, (Rectangle) {840 + d * 3, 240, 28, 28}, (Vector2) {14, 14}, 0, WHITE);
+
+    DrawTexturePro(tex_num, (Rectangle) {16 * 11, 0, 16, 16}, (Rectangle) {840 + d * 4 - 12, 246, 16, 16}, (Vector2) {8, 8}, 0, WHITE);
+
+    DrawTexturePro(tex_num, (Rectangle) {0, 0, 16, 16}, (Rectangle) {840 + d * 4 + 2, 246, 16, 16}, (Vector2) {8, 8}, 0, WHITE);
+
+    DrawTexturePro(tex_num, (Rectangle) {0, 0, 16, 16}, (Rectangle) {840 + d * 4 + 16, 246, 16, 16}, (Vector2) {8, 8}, 0, WHITE);
+
+
+  
+
 }
 
 void init() {
@@ -138,15 +181,19 @@ void init() {
     // mco_desc desc = mco_desc_init(coro_entry, 0);
     // mco_create(&co, &desc);
 
-    tex_background = LoadTexture("src/sprites/bg.png");
+    tex_background_rigth = LoadTexture("src/sprites/right_chapter_bg.png");
+    tex_background_updown = LoadTexture("src/sprites/updown_chapter_bg.png");
+    tex_background_left = LoadTexture("src/sprites/left_chapter_bg.png");
+
     tex_game_field = LoadTexture("src/sprites/bg2.png");
     tex_diff = LoadTexture("src/sprites/difficult.png");
     tex_hi_score = LoadTexture("src/sprites/hi_score.png");
     tex_score = LoadTexture("src/sprites/score.png");
-    tex_hit_points = LoadTexture("src/sprites/player.png");
+    tex_hit_points_text = LoadTexture("src/sprites/player.png");
     tex_power = LoadTexture("src/sprites/power.png");
     tex_graze = LoadTexture("src/sprites/graze.png");
     tex_num = LoadTexture("src/sprites/lannumbers_font.png");
+    tex_hit_points = LoadTexture("src/sprites/reimu_hit_points.png");
 }
 
 void game_loop() {

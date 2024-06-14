@@ -10,6 +10,7 @@ typedef struct Player {
     float x_speed;
     float y_speed;
     float frame_index;
+    int hit_points;
 } Player;
 
 typedef struct Collision {
@@ -35,8 +36,15 @@ int player_bullet_count = 0;
 int rotation_k_right = 0;
 int rotation_k_left = 0;
 int animation_start = 0;
-int points = 0;
 int timer = 0;
+int opacity = 255;
+
+//Game-counts---------------------//
+
+int points = 0;
+double power = 0;
+
+//--------------------------------//
 
 Texture2D tex_player;
 Texture2D tex_hud;
@@ -74,16 +82,37 @@ void player_update() {
 
     float spd = 7;
     points = 0;
- 
-    for (int i = 0; i < get_count_bullet(); i++) {
-        if ((player_col.x + 20 - 7.5 <= get_enemy_bullet_x(i) + 10) &&
-            (get_enemy_bullet_x(i) + 10 <= player_col.x + 20 - 7.5 + 10) &&
-            (player_col.y + 27 - 7.5 < get_enemy_bullet_y(i) + 10) &&
-            (get_enemy_bullet_y(i) + 10 < player_col.y + 27 - 7.5 + 10))
-        {
-            PlaySound(player_death);
+    
+    if (opacity >= 255) {
+        for (int i = 0; i < get_count_bullet(); i++) {
+            if ((player_col.x + 20 - 7.5 <= get_enemy_bullet_x(i) + 10) &&
+                (get_enemy_bullet_x(i) + 10 <= player_col.x + 20 - 7.5 + 10) &&
+                (player_col.y + 27 - 7.5 < get_enemy_bullet_y(i) + 10) &&
+                (get_enemy_bullet_y(i) + 10 < player_col.y + 27 - 7.5 + 10))
+            {
+                PlaySound(player_death);
+                player.hit_points--;
+                opacity = 0;
+            }
+        }
+    } else {
+        opacity+=1;
+    }
+
+    for (int i = 0; i < get_count_pows(); i++) {
+        Collision* p = &player_col;
+
+        if ((p->x < item_power[i].x + item_power[i].width / 2) &&
+            (item_power[i].x + item_power[i].width / 2 < p->x + p->width) &&
+            (p->y < item_power[i].y + item_power[i].height / 2) &&
+            (item_power[i].y + item_power[i].height / 2 < p->y + p->height)) {
+                delete_item_power(i);
+                power+=0.05;
+                //printf("%f\n", power);
         }
     }
+
+    //printf("%f\n", power);
 
     if (IsKeyDown(KEY_LEFT_SHIFT)) {
         spd = 3;
@@ -153,7 +182,7 @@ void player_update() {
             create_bullet(38);
         }
     }
-
+    
 
     for (int i = 0; i < player_bullet_count; i++) {
         player_bullet[i].y += player_bullet[i].y_speed;
@@ -203,7 +232,7 @@ void player_draw() {
             94
         };
 
-        DrawTexturePro(tex_player, src, dest, (Vector2) {16, 24}, 0, WHITE);
+        DrawTexturePro(tex_player, src, dest, (Vector2) {16, 24}, 0, (Color) {255, 255, 255, opacity});
     }
 
     { //Hud
@@ -234,6 +263,7 @@ void player_init() {
     player = (Player) {0};
     player.x = 350;
     player.y = 662;
+    player.hit_points = 2;
     player.frame_index = 0.25;
 
     player_col.height = 94;
@@ -269,4 +299,12 @@ float get_player_y() {
 
 int get_points() {
     return points;
+}
+
+int get_hit_points() {
+    return player.hit_points;
+}
+
+double get_power() {
+    return power;
 }
