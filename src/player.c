@@ -1,36 +1,12 @@
 #include <stdio.h>
+#include <math.h>
 #include "raylib.h"
 #include "enemies.h"
 #include "player.h"
-#include <math.h>
-
-typedef struct Player {
-    float x;
-    float y;
-    float x_speed;
-    float y_speed;
-    float frame_index;
-    int hit_points;
-} Player;
-
-typedef struct Collision {
-    float x;
-    float y;
-    float height;
-    float width;
-} Collision;
-
-typedef struct Bullet {
-    float x;
-    float y;
-    float x_speed;
-    float y_speed;
-} Bullet;
+#include "subjects.h"
 
 Player player;
 Bullet player_bullet[1000];
-Collision player_col;
-Collision bullet_col[100];
 
 int player_bullet_count = 0;
 int rotation_k_right = 0;
@@ -59,9 +35,8 @@ void create_bullet(int delta) {
     b->y = player.y;
     b->x_speed = 20;
     b->y_speed = -20;
-
-    bullet_col[delta].height = 16;
-    bullet_col[delta].width = 14;
+    b->height = 16;
+    b->width = 14;
 
     player_bullet_count++;
 }
@@ -85,10 +60,12 @@ void player_update() {
     
     if (opacity >= 255) {
         for (int i = 0; i < get_count_bullet(); i++) {
-            if ((player_col.x + 20 - 7.5 <= get_enemy_bullet_x(i) + 10) &&
-                (get_enemy_bullet_x(i) + 10 <= player_col.x + 20 - 7.5 + 10) &&
-                (player_col.y + 27 - 7.5 < get_enemy_bullet_y(i) + 10) &&
-                (get_enemy_bullet_y(i) + 10 < player_col.y + 27 - 7.5 + 10))
+            Bullet* pb = &pixi_bullet[i];
+
+            if ((player.x + 20 - 7.5 <= pb->x  + 10) &&
+                (pb->x + 10 <= player.x + 20 - 7.5 + 10) &&
+                (player.y + 27 - 7.5 < pb->y + 10) &&
+                (pb->y + 10 < player.y + 27 - 7.5 + 10))
             {
                 PlaySound(player_death);
                 player.hit_points--;
@@ -96,22 +73,9 @@ void player_update() {
             }
         }
     } else {
-        opacity+=1;
+        opacity+=4;
     }
-
-    for (int i = 0; i < get_count_pows(); i++) {
-        Collision* p = &player_col;
-
-        if ((p->x < item_power[i].x + item_power[i].width / 2) &&
-            (item_power[i].x + item_power[i].width / 2 < p->x + p->width) &&
-            (p->y < item_power[i].y + item_power[i].height / 2) &&
-            (item_power[i].y + item_power[i].height / 2 < p->y + p->height)) {
-                delete_item_power(i);
-                power+=0.05;
-                //printf("%f\n", power);
-        }
-    }
-
+   
     //printf("%f\n", power);
 
     if (IsKeyDown(KEY_LEFT_SHIFT)) {
@@ -127,9 +91,6 @@ void player_update() {
             player.x_speed = spd;
         }
 
-        player_col.x = player.x;
-        player_col.y = player.y;
-
         player.frame_index += 0.25;
         if (player.frame_index > 7) {
             player.frame_index = animation_start;
@@ -141,9 +102,6 @@ void player_update() {
         if (player.x > 52) {
             player.x_speed = -spd;
         }
-
-        player_col.x = player.x;
-        player_col.y = player.y;
 
         player.frame_index += 0.25;
         if (player.frame_index > 7) {
@@ -191,8 +149,7 @@ void player_update() {
             delete_bullet(i, "");
             i--;
         }
-        bullet_col[i].y = player_bullet[i].y;
-        bullet_col[i].x = player_bullet[i].x;
+            
     }
 }
 
@@ -265,9 +222,8 @@ void player_init() {
     player.y = 662;
     player.hit_points = 2;
     player.frame_index = 0.25;
-
-    player_col.height = 94;
-    player_col.width = 60;
+    player.height = 94;
+    player.width = 60;
 
     tex_player = LoadTexture("src/sprites/REIMU_SPRITES.png");
     tex_hud = LoadTexture("src/sprites/reimu_shift.png");

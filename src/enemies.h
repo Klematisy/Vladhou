@@ -1,15 +1,5 @@
 #pragma once
 
-typedef struct Item {
-    float x;
-    float y;
-    float width;
-    float height;
-    float y_speed;
-} Item;
-
-extern Item item_power[100];
-
 void enemy_update();
 void enemy_draw();
 void enemy_init();

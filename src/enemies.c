@@ -1,31 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "enemies.h"
-#include "player.h"
 #include <raylib.h>
 #include <math.h>
+#include "enemies.h"
+#include "player.h"
+#include "subjects.h"
 
 #define array_length(a) (sizeof(a) / sizeof(a[0]))
-
-typedef struct Objects {
-    float x;
-    float y;
-    int number;
-    float hit_points;
-    float height;
-    float width;
-} Objects;
-
-typedef struct Bullet {
-    float x;
-    float y;
-    float k; //angle coefficient
-    float b; //Oy
-    float width;
-    float height;
-} Bullet;
-
-
 
 //-------------CONSTANTS-----------------//
 
@@ -61,6 +42,18 @@ int pow_count = 0;
 
 /*-------------------MAIN FUNCTIONS-------------------*/
 
+float deg_to_rad(float x) { 
+    return x / 180.0f * M_PI; 
+}
+
+float rad_to_deg(float x) { 
+    return x / M_PI * 180.0f; 
+}
+
+float point_direction(float x1, float y1, float x2, float y2) {
+    return rad_to_deg(atan2f(y1 - y2, x2 - x1));
+}
+
 void delete_item_power(int i) {
     for (int j = i; j < pow_count - 1; j++) {
         item_power[j] = item_power[j + 1];
@@ -89,7 +82,7 @@ void create_enemy_bullet(int i, int delta_x, int delta_y, int d_x, int d_y) {
     b->y = pixi[enemy].y + d_y;
     b->x = pixi[enemy].x + d_x;
 
-    b->k = ((pixi[enemy].y - get_player_y() + delta_y) / (pixi[enemy].x - get_player_x() + delta_x));
+    b->k = ((pixi[enemy].y - player.y + delta_y) / (pixi[enemy].x - player.x + delta_x));
     b->b = pixi[enemy].y - b->k * (pixi[enemy].x);
 
     pixi_bullet[i].width = 25;
@@ -133,7 +126,11 @@ void delete_enemy(int j) {
 
 void enemy_collision_calc(int i) {
     for (int j = 0; j < get_player_bullet_count(); j++) {
-        if ((get_x_bullet(j) < pixi[i].x + pixi[i].height) && (get_x_bullet(j) > pixi[i].x) && (get_y_bullet(j) > pixi[i].y) && (get_y_bullet(j) < pixi[i].y + pixi[i].width)) {
+        Bullet* pb = &player_bullet[j];
+        if ((pb->x < pixi[i].x + pixi[i].width) && 
+            (pixi[i].x < pb->x) && 
+            (pixi[i].y < pb->y) && 
+            (pb->y < pixi[i].y + pixi[i].height)) {
             if (pixi[i].hit_points == 0) {
                 delete_enemy(i);    
             } else {
@@ -185,14 +182,45 @@ void enemy_update() {
             delete_enemy_bullet(i);
         }
     }
+    
+    float k;
+    float b;
 
     for (int i = 0; i < pow_count; i++) {
-        item_power[i].y += item_power[i].y_speed;
-        if (item_power[i].y_speed < 3.5) {
-            item_power[i].y_speed += 0.1;
+        Player* p = &player;
+        Item* pow = &item_power[i];
+
+        if ((p->x - 100 < pow->x + pow->width / 2) &&
+            (pow->x + pow->width / 2 < p->x + p->width + 100) &&
+            (p->y - 100 < pow->y + pow->height / 2) && 
+            (pow->y + pow->height / 2 < p->y + p->height + 100)) {
+                
+                float dir = point_direction(pow->x, pow->y, p->x, p->y);
+                
+                pow->x += 10 * cosf(deg_to_rad(dir));
+                pow->y += 10 * -sinf(deg_to_rad(dir));
+
+                //printf("i: %d, y = %fx + %f\n", i, k, b);
+        } else {
+        
+            pow->y += pow->y_speed;
+            if (pow->y_speed < 3.5) {
+                pow->y_speed += 0.1;
+            }
+            if (pow->y > 768) {
+                delete_item_power(i);
+            }
         }
-        if (item_power[i].y > 768) {
-            delete_item_power(i);
+
+        
+        if ((p->x < pow->x + pow->width / 2) &&
+            (pow->x + pow->width / 2 < p->x + p->width) &&
+            (p->y < pow->y + pow->height / 2) &&
+            (pow->y + pow->height / 2 < p->y + p->height)) {
+                delete_item_power(i);
+                i--;
+                power+=0.05;
+                //printf("%f\n", power);
         }
     }
 }

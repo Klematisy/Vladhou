@@ -75,7 +75,7 @@ void draw() {
 
     DrawTexturePro(tex_background_rigth,                              //Drawing Background
         (Rectangle){0, 0, 228, 480}, 
-        (Rectangle){870, 120, 455, 770},                         
+        (Rectangle){870, 120, 459, 770},                         
         (Vector2) {227.5, 120}, 
         0,
         WHITE
