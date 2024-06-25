@@ -22,7 +22,10 @@ Item item_power[100];
 Texture2D tex_pixi;
 Texture2D tex_item_power;
 Texture2D tex_pixi_bullet;
+
 Sound pixi_death;
+Sound pick_item;
+Sound enemy_shoot;
 
 int timer_enemy = 0;
 int enemies_count = 0;
@@ -41,18 +44,6 @@ int pow_count = 0;
 //----------------------------------------------------//
 
 /*-------------------MAIN FUNCTIONS-------------------*/
-
-float deg_to_rad(float x) { 
-    return x / 180.0f * M_PI; 
-}
-
-float rad_to_deg(float x) { 
-    return x / M_PI * 180.0f; 
-}
-
-float point_direction(float x1, float y1, float x2, float y2) {
-    return rad_to_deg(atan2f(y1 - y2, x2 - x1));
-}
 
 void delete_item_power(int i) {
     for (int j = i; j < pow_count - 1; j++) {
@@ -85,8 +76,8 @@ void create_enemy_bullet(int i, int delta_x, int delta_y, int d_x, int d_y) {
     b->k = ((pixi[enemy].y - player.y + delta_y) / (pixi[enemy].x - player.x + delta_x));
     b->b = pixi[enemy].y - b->k * (pixi[enemy].x);
 
-    pixi_bullet[i].width = 25;
-    pixi_bullet[i].height = 25;
+    pixi_bullet[i].width = 31,25;
+    pixi_bullet[i].height = 31,25;
 
     bullets_count++;
 }
@@ -104,14 +95,14 @@ void create_enemy() {
     p->y = 10;
     p->number = enemies_count;
     p->hit_points = 2;
-    p->height = 45;
-    p->width = 40.5;
+    p->height = 47,5;
+    p->width = 43.75;
 
     created_enemies++;
     enemies_count++;
 }
 
-void delete_enemy(int j) {
+void delete_enemy(int j, char str[]) {
     create_pow_item(j);
     for (int i = j; i < enemies_count - 1; i++) {
         pixi[i] = pixi[i + 1];
@@ -119,26 +110,11 @@ void delete_enemy(int j) {
     if (shooting_enemy > j) {
         shooting_enemy--;
     }
-    PlaySound(pixi_death);
+    if (str != "down") {
+        PlaySound(pixi_death);
+    }
     enemies_count--;
     
-}
-
-void enemy_collision_calc(int i) {
-    for (int j = 0; j < get_player_bullet_count(); j++) {
-        Bullet* pb = &player_bullet[j];
-        if ((pb->x < pixi[i].x + pixi[i].width) && 
-            (pixi[i].x < pb->x) && 
-            (pixi[i].y < pb->y) && 
-            (pb->y < pixi[i].y + pixi[i].height)) {
-            if (pixi[i].hit_points == 0) {
-                delete_enemy(i);    
-            } else {
-                pixi[i].hit_points--;
-            }
-            delete_bullet(j, "pixi");
-        }
-    }
 }
 
 void enemy_update() {
@@ -157,19 +133,19 @@ void enemy_update() {
             pixi[i].x = (cos(pi / 2 + pixi[i].y * pi / 180) * 200 + centre_x);
         }
 
-        enemy_collision_calc(i);
-
-        if (pixi[i].y > 768) {
-            delete_enemy(i);
+        if (pixi[i].y > 900) {
+            
+            delete_enemy(i, "down");
         }
     }
 
     
-    if ((created_enemies > 2) && (shooting_enemy < enemies_count) && (timer_enemy % 25 == 0)) {
+    if ((created_enemies > 3) && (shooting_enemy < enemies_count) && (timer_enemy % 25 == 0)) {
         create_enemy_bullet(bullets_count, 0, 0, 0, 0);
-        create_enemy_bullet(bullets_count, -30, -10, 10, 10);
+        create_enemy_bullet(bullets_count, -30, -10, 5, 10);
         create_enemy_bullet(bullets_count, 10, 0, 5, 15);
         create_enemy_bullet(bullets_count, -50, 0, -5, 15);
+        PlaySound(enemy_shoot);
         shooting_enemy++;
     }
 
@@ -189,39 +165,14 @@ void enemy_update() {
     for (int i = 0; i < pow_count; i++) {
         Player* p = &player;
         Item* pow = &item_power[i];
-
-        if ((p->x - 100 < pow->x + pow->width / 2) &&
-            (pow->x + pow->width / 2 < p->x + p->width + 100) &&
-            (p->y - 100 < pow->y + pow->height / 2) && 
-            (pow->y + pow->height / 2 < p->y + p->height + 100)) {
-                
-                float dir = point_direction(pow->x, pow->y, p->x, p->y);
-                
-                pow->x += 10 * cosf(deg_to_rad(dir));
-                pow->y += 10 * -sinf(deg_to_rad(dir));
-
-                //printf("i: %d, y = %fx + %f\n", i, k, b);
-        } else {
         
-            pow->y += pow->y_speed;
-            if (pow->y_speed < 3.5) {
-                pow->y_speed += 0.1;
-            }
-            if (pow->y > 768) {
-                delete_item_power(i);
-            }
+        pow->y += pow->y_speed;
+        if (pow->y_speed < 3.5) {
+            pow->y_speed += 0.1;
         }
-
-        
-        if ((p->x < pow->x + pow->width / 2) &&
-            (pow->x + pow->width / 2 < p->x + p->width) &&
-            (p->y < pow->y + pow->height / 2) &&
-            (pow->y + pow->height / 2 < p->y + p->height)) {
-                delete_item_power(i);
-                i--;
-                power+=0.05;
-                //printf("%f\n", power);
-        }
+        if (pow->y > 768) {
+            delete_item_power(i);
+        } 
     }
 }
 
@@ -240,11 +191,13 @@ void enemy_draw() {
 }
 
 void enemy_init() {
-    tex_pixi = LoadTexture("src/sprites/Enemy.png");
-    tex_pixi_bullet = LoadTexture("src/sprites/enemy_bullet.png");
-    tex_item_power = LoadTexture("src/sprites/item_power.png");
+    tex_pixi = LoadTexture("sprites/Enemy.png");
+    tex_pixi_bullet = LoadTexture("sprites/enemy_bullet.png");
+    tex_item_power = LoadTexture("sprites/item_power.png");
 
-    pixi_death = LoadSound("src/sounds/pixi_death.wav");
+    pixi_death = LoadSound("sounds/pixi_death.wav");
+    pick_item = LoadSound("sounds/power_item.wav");
+    enemy_shoot = LoadSound("sounds/enemy_bullet_sound.wav");
 }
 
 /*----------------------------------------------------*/

@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "minicoro.h"
 #include "raylib.h"
 #include "game.h"
 #include "enemies.h"
 #include "player.h"
+#include "subjects.h"
+#include "collisions.h"
 
 int back_animation = 0;
 
@@ -23,15 +26,19 @@ Texture2D tex_num;
 Texture2D tex_hit_points;
 
 int score = 0;
-// mco_coro* co;
+mco_coro* co;
 
-// void coro_entry(mco_coro* co) {
-//     printf("coroutine 1\n");
-//     for (int i = 0; i < 60; i++) {
-//         mco_yield(co);
-//     }
-//     printf("coroutine 2\n");
-// }
+void delay(int k) {
+    for (int i = 0; i < k; i++) {
+         mco_yield(co);
+     }
+}
+
+void coro_entry(mco_coro* co) {
+     printf("coroutine 1\n");
+     delay(60);
+     printf("coroutine 2\n");
+}
 
 int int_len() {
     int b = score;
@@ -47,13 +54,15 @@ int int_len() {
 void update() {
     player_update();
     enemy_update();
+    collision_calc();
+
     back_animation--;
     
     score += get_points();
-    //printf("%d\n", score);
-    // if (mco_status(co) == MCO_SUSPENDED) {
-    //     mco_resume(co);
-    // }
+    
+    if (mco_status(co) == MCO_SUSPENDED) {
+         mco_resume(co);
+    }
 }
 
 void draw() {
@@ -129,13 +138,13 @@ void draw() {
         d+=24;
     }
     d = 0;
-    for (int i = 0; i < get_hit_points(); i++) {
+    for (int i = 0; i < player.hit_points; i++) {
         DrawTexturePro(tex_hit_points, (Rectangle) {0, 0, 16, 15}, (Rectangle) {840 + d, 200, 32, 32}, (Vector2) {16, 16}, 0, WHITE);
         d = 28;
     }
     
     char table_power[16];
-    sprintf(table_power, "%0.2lf", get_power());
+    sprintf(table_power, "%0.2lf", power);
 
     d = 0;
     
@@ -178,22 +187,22 @@ void init() {
     player_init();
     enemy_init();
 
-    // mco_desc desc = mco_desc_init(coro_entry, 0);
-    // mco_create(&co, &desc);
+    mco_desc desc = mco_desc_init(coro_entry, 0);
+    mco_create(&co, &desc);
 
-    tex_background_rigth = LoadTexture("src/sprites/right_chapter_bg.png");
-    tex_background_updown = LoadTexture("src/sprites/updown_chapter_bg.png");
-    tex_background_left = LoadTexture("src/sprites/left_chapter_bg.png");
+    tex_background_rigth = LoadTexture("sprites/right_chapter_bg.png");
+    tex_background_updown = LoadTexture("sprites/updown_chapter_bg.png");
+    tex_background_left = LoadTexture("sprites/left_chapter_bg.png");
 
-    tex_game_field = LoadTexture("src/sprites/bg2.png");
-    tex_diff = LoadTexture("src/sprites/difficult.png");
-    tex_hi_score = LoadTexture("src/sprites/hi_score.png");
-    tex_score = LoadTexture("src/sprites/score.png");
-    tex_hit_points_text = LoadTexture("src/sprites/player.png");
-    tex_power = LoadTexture("src/sprites/power.png");
-    tex_graze = LoadTexture("src/sprites/graze.png");
-    tex_num = LoadTexture("src/sprites/lannumbers_font.png");
-    tex_hit_points = LoadTexture("src/sprites/reimu_hit_points.png");
+    tex_game_field = LoadTexture("sprites/bg2.png");
+    tex_diff = LoadTexture("sprites/difficult.png");
+    tex_hi_score = LoadTexture("sprites/hi_score.png");
+    tex_score = LoadTexture("sprites/score.png");
+    tex_hit_points_text = LoadTexture("sprites/player.png");
+    tex_power = LoadTexture("sprites/power.png");
+    tex_graze = LoadTexture("sprites/graze.png");
+    tex_num = LoadTexture("sprites/lannumbers_font.png");
+    tex_hit_points = LoadTexture("sprites/reimu_hit_points.png");
 }
 
 void game_loop() {

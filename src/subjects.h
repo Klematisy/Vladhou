@@ -33,11 +33,14 @@ typedef struct Bullet {
 } Bullet;
 
 extern Bullet player_bullet[1000];
+extern Bullet power_bullet[1000];
 extern Bullet pixi_bullet[100];
 
 typedef struct Objects {
     float x;
     float y;
+    float y_speed;
+    float x_speed;
     int number;
     float hit_points;
     float height;
@@ -45,5 +48,10 @@ typedef struct Objects {
 } Objects;
 
 extern Objects pixi[25];
+extern Objects player_power[4];
 
 extern double power;
+extern int pow_count;
+extern int opacity;
+extern int enemies_count;
+extern int power_bullet_count;

@@ -7,6 +7,8 @@
 
 Player player;
 Bullet player_bullet[1000];
+Bullet power_bullet[1000];
+Objects player_power[4]; 
 
 int player_bullet_count = 0;
 int rotation_k_right = 0;
@@ -14,19 +16,44 @@ int rotation_k_left = 0;
 int animation_start = 0;
 int timer = 0;
 int opacity = 255;
+int count_power = 0;
+int power_delta = 100;
+int power_bullet_count = 0;
 
 //Game-counts---------------------//
 
 int points = 0;
-double power = 0;
+double power = 2;
 
 //--------------------------------//
 
 Texture2D tex_player;
 Texture2D tex_hud;
 Texture2D tex_bullet;
+Texture2D tex_pow_bullet;
+Texture2D p_pow;
+
 Sound bullet_sound;
 Sound player_death;
+
+void delete_pow_bullet(int i) {
+    for (int j = i; j < power_bullet_count - 1; j++) {
+        power_bullet[j] = power_bullet[j + 1];
+    }
+    power_bullet_count--;
+}
+
+void create_pow_bullet() {
+    //Bullet* pb = &power_bullet[power_bullet_count];
+
+    for (int i = 0; i < (int) floor(power); i++) {
+        power_bullet[power_bullet_count].x = player_power[i].x - 5;
+        power_bullet[power_bullet_count++].y = player_power[i].y - 10;
+
+        power_bullet[power_bullet_count].x = player_power[i].x + 5;
+        power_bullet[power_bullet_count++].y = player_power[i].y - 10;
+    }
+}
 
 void create_bullet(int delta) {
     Bullet* b = &player_bullet[player_bullet_count];
@@ -57,31 +84,39 @@ void player_update() {
 
     float spd = 7;
     points = 0;
-    
-    if (opacity >= 255) {
-        for (int i = 0; i < get_count_bullet(); i++) {
-            Bullet* pb = &pixi_bullet[i];
 
-            if ((player.x + 20 - 7.5 <= pb->x  + 10) &&
-                (pb->x + 10 <= player.x + 20 - 7.5 + 10) &&
-                (player.y + 27 - 7.5 < pb->y + 10) &&
-                (pb->y + 10 < player.y + 27 - 7.5 + 10))
-            {
-                PlaySound(player_death);
-                player.hit_points--;
-                opacity = 0;
-            }
-        }
-    } else {
-        opacity+=4;
-    }
-   
-    //printf("%f\n", power);
+    Objects* pS = &player_power[0];
+    pS->x_speed += 4;
+    pS->y_speed += 4;
+
+    for (int i = 0; i < (int) floor(power); i++) {
+        Objects* pp = &player_power[i];
+                
+        switch ((int) floor(power)) { 
+            case 2:
+                pp->y = sin((i + 1) * (PI / 2 + PI / 2) + pS->y_speed * PI / 180) * power_delta + player.y + player.height / 2 - 20;
+                pp->x = cos((i + 1) * (PI / 2 + PI / 2) + pS->x_speed * PI / 180) * power_delta + player.x + player.width / 2 - 15;
+                break;
+            case 3:
+                pp->y = sin((i + 1) * (PI / 2 + PI / 6) + pS->y_speed * PI / 180) * power_delta + player.y + player.height / 2 - 20;
+                pp->x = cos((i + 1) * (PI / 2 + PI / 6) + pS->x_speed * PI / 180) * power_delta + player.x + player.width / 2 - 15;
+                break;
+            default:
+                pp->y = sin((i + 1) * (PI / 2) + pS->y_speed * PI / 180) * power_delta + player.y + player.height / 2 - 20;
+                pp->x = cos((i + 1) * (PI / 2) + pS->x_speed * PI / 180) * power_delta + player.x + player.width / 2 - 15;
+        } 
+    }   
 
     if (IsKeyDown(KEY_LEFT_SHIFT)) {
         spd = 3;
         rotation_k_right+=3;
         rotation_k_left-=3;
+        if (power_delta > 40)
+            power_delta-=10;
+    } else {
+        if (power_delta < 100) {
+            power_delta+=10;
+        }
     }
 
     if (IsKeyDown(KEY_RIGHT)) {
@@ -138,6 +173,7 @@ void player_update() {
             PlaySound(bullet_sound);
             create_bullet(0);
             create_bullet(38);
+            create_pow_bullet();
         }
     }
     
@@ -148,8 +184,15 @@ void player_update() {
         if (player_bullet[i].y < 10) {
             delete_bullet(i, "");
             i--;
+        }        
+    }
+
+    for (int i = 0; i < power_bullet_count; i++) {
+        power_bullet[i].y -= 20;
+
+        if (power_bullet[i].y < -20) {
+            delete_pow_bullet(i);
         }
-            
     }
 }
 
@@ -204,15 +247,26 @@ void player_draw() {
             Rectangle dest_hud = (Rectangle) {
                 player.x + 17,
                 player.y + 24,
-                96,
-                91.5
+                120,
+                114.375
             };
 
-            DrawTexturePro(tex_hud, src_hud, dest_hud, (Vector2) {48, 45.75}, rotation_k_right, WHITE);
-            DrawTexturePro(tex_hud, src_hud, dest_hud, (Vector2) {48, 45.75}, rotation_k_left, WHITE);
+            DrawTexturePro(tex_hud, src_hud, dest_hud, (Vector2) {60, 57.1875}, rotation_k_right, WHITE);
+            DrawTexturePro(tex_hud, src_hud, dest_hud, (Vector2) {60, 57.1875}, rotation_k_left, WHITE);
         }
       //DrawRectangle(player.x + 20 - 7.5, player.y + 27 - 7.5, 10, 10, WHITE);
     }
+
+    { //Player power
+        for (int i = 0; i < power_bullet_count; i++) {
+            DrawTexturePro(tex_pow_bullet, (Rectangle) {0, 0, 54, 6}, (Rectangle) {power_bullet[i].x, power_bullet[i].y, 54, 6}, (Vector2) {27, 3}, -90,  WHITE);
+        }
+
+        for (int i = 0; i < (int) floor(power); i++) {
+            DrawTexturePro(p_pow, (Rectangle) {0, 0, 15, 15}, (Rectangle) {player_power[i].x, player_power[i].y, 30, 30}, (Vector2) {15, 15}, 0,  WHITE);
+        }
+    }
+
 }
 
 void player_init() {
@@ -225,42 +279,24 @@ void player_init() {
     player.height = 94;
     player.width = 60;
 
-    tex_player = LoadTexture("src/sprites/REIMU_SPRITES.png");
-    tex_hud = LoadTexture("src/sprites/reimu_shift.png");
-    tex_bullet = LoadTexture("src/sprites/reimu_bullet.png");
-    bullet_sound = LoadSound("src/sounds/bullet_sound.wav");
-    player_death = LoadSound("src/sounds/player_death.wav");
+    player_power[0].y_speed = 0;
+    player_power[0].x_speed = 0;
+
+    tex_player = LoadTexture("sprites/REIMU_SPRITES.png");
+    tex_hud = LoadTexture("sprites/reimu_shift.png");
+    tex_bullet = LoadTexture("sprites/reimu_bullet.png");
+    p_pow = LoadTexture("sprites/reimu_power.png");
+    tex_pow_bullet = LoadTexture("sprites/power_bullet.png");
+
+    bullet_sound = LoadSound("sounds/bullet_sound.wav");
+    player_death = LoadSound("sounds/player_death.wav");
     
-}
-
-float get_x_bullet(int j) {
-    return player_bullet[j].x;
-}
-
-float get_y_bullet(int j) {
-    return player_bullet[j].y;
 }
 
 int get_player_bullet_count() {
     return player_bullet_count;
 }
 
-float get_player_x() {
-    return player.x;
-}
-
-float get_player_y() {
-    return player.y;
-}
-
 int get_points() {
     return points;
-}
-
-int get_hit_points() {
-    return player.hit_points;
-}
-
-double get_power() {
-    return power;
 }
